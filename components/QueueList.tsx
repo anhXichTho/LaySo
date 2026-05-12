@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { QueueItem } from "@/lib/utils";
-import { User, Phone, Clock } from "lucide-react";
+import { User, Mail } from "lucide-react";
 
 interface Props {
   items: QueueItem[];
@@ -50,8 +50,8 @@ export default function QueueList({ items }: Props) {
                 {item.name}
               </p>
               <p className="text-xs text-gray-500 flex items-center gap-1">
-                <Phone className="w-3 h-3" />
-                {item.phone}
+                <Mail className="w-3 h-3" />
+                {item.email}
               </p>
             </div>
             <div className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${sc.bg} ${sc.text}`}>

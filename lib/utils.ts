@@ -2,6 +2,7 @@ export interface QueueItem {
   id: string;
   name: string;
   phone: string;
+  email: string;
   registeredAt: number;
   status: "waiting" | "in-progress" | "done";
   order: number;
@@ -15,6 +16,9 @@ export interface ThemeConfig {
   textColor: string;
   headerColor: string;
   accentColor: string;
+  titleText: string;
+  subtitleText: string;
+  turnDuration: number;
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
@@ -25,6 +29,9 @@ export const DEFAULT_THEME: ThemeConfig = {
   textColor: "#f8fafc",
   headerColor: "#1e3a8a",
   accentColor: "#14b8a6",
+  titleText: "Lấy Lượt Chụp Ảnh",
+  subtitleText: "Lễ Trưởng Thành",
+  turnDuration: 5,
 };
 
 export function formatTime(timestamp: number): string {
@@ -36,14 +43,15 @@ export function estimateTime(
   order: number,
   currentOrder: number,
   turnStartTime: number | null,
-  waitingBeforeMe: number
+  waitingBeforeMe: number,
+  turnMinutes: number = 5
 ): string {
   if (!turnStartTime) return "Chưa bắt đầu";
   if (order <= currentOrder) return "Sắp đến lượt!";
-  const TURN_DURATION = 10 * 60 * 1000;
+  const turnMs = turnMinutes * 60 * 1000;
   const elapsed = Date.now() - turnStartTime;
-  const remaining = Math.max(0, TURN_DURATION - elapsed);
-  const estimatedMs = Date.now() + remaining + (waitingBeforeMe - 1) * TURN_DURATION;
+  const remaining = Math.max(0, turnMs - elapsed);
+  const estimatedMs = Date.now() + remaining + (waitingBeforeMe - 1) * turnMs;
   return formatTime(estimatedMs);
 }
 

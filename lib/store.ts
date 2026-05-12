@@ -19,13 +19,14 @@ const QUEUE_COLLECTION = "photo_queue";
 const CONFIG_DOC = "app_config";
 const CONFIG_COLLECTION = "settings";
 
-export async function addToQueue(name: string, phone: string): Promise<QueueItem> {
+export async function addToQueue(name: string, phone: string, email: string): Promise<QueueItem> {
   const snapshot = await getDocs(collection(db, QUEUE_COLLECTION));
   const order = snapshot.size + 1;
 
   const item: Omit<QueueItem, "id"> = {
     name,
     phone,
+    email,
     registeredAt: Date.now(),
     status: "waiting",
     order,

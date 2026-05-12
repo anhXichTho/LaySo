@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Palette, X, Save, RotateCcw, Image } from "lucide-react";
+import { Palette, X, Save, RotateCcw, Image, Type, Timer } from "lucide-react";
 import { ThemeConfig, DEFAULT_THEME } from "@/lib/utils";
 import { saveThemeConfig } from "@/lib/store";
 
@@ -41,7 +41,7 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
     setLocal(DEFAULT_THEME);
   }
 
-  const fields: { key: keyof ThemeConfig; label: string; type: "color" | "text" }[] = [
+  const colorFields: { key: keyof ThemeConfig; label: string; type: "color" | "text" }[] = [
     { key: "bgColor", label: "Màu nền", type: "color" },
     { key: "bgImage", label: "URL ảnh nền", type: "text" },
     { key: "headerColor", label: "Màu header", type: "color" },
@@ -93,10 +93,12 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                   backgroundPosition: "center",
                 }}
               >
-                <p style={{ color: local.headerColor }} className="font-bold mb-1">
-                  Preview Header
+                <p style={{ color: local.textColor }} className="font-bold mb-1">
+                  {local.titleText || "Tiêu đề"}
                 </p>
-                <p className="text-xs">Nội dung text mẫu</p>
+                <p className="text-xs" style={{ color: `${local.textColor}cc` }}>
+                  {local.subtitleText || "Phụ đề"} · {local.turnDuration} phút/lượt
+                </p>
                 <button
                   type="button"
                   className="mt-1.5 px-3 py-1 rounded-lg text-xs font-bold"
@@ -106,12 +108,58 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                 </button>
               </div>
 
-              {fields.map((f) => (
+              {/* Text settings */}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5 pt-1">
+                <Type className="w-3.5 h-3.5" /> Nội dung
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Tiêu đề chính</label>
+                  <input
+                    type="text"
+                    value={local.titleText}
+                    onChange={(e) => handleChange("titleText", e.target.value)}
+                    className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Phụ đề</label>
+                  <input
+                    type="text"
+                    value={local.subtitleText}
+                    onChange={(e) => handleChange("subtitleText", e.target.value)}
+                    className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800"
+                  />
+                </div>
+              </div>
+
+              {/* Turn duration */}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5 pt-1">
+                <Timer className="w-3.5 h-3.5" /> Thời gian
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-600 shrink-0">Số phút / lượt</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={local.turnDuration}
+                  onChange={(e) => setLocal((prev) => ({ ...prev, turnDuration: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-20 text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800 text-center"
+                />
+                <span className="text-xs text-gray-500">phút</span>
+              </div>
+
+              {/* Color settings */}
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5 pt-1">
+                <Palette className="w-3.5 h-3.5" /> Màu sắc
+              </p>
+              {colorFields.map((f) => (
                 <div key={f.key} className="flex items-center gap-2.5">
                   {f.type === "color" ? (
                     <input
                       type="color"
-                      value={local[f.key]}
+                      value={local[f.key] as string}
                       onChange={(e) => handleChange(f.key, e.target.value)}
                       className="w-9 h-9 rounded-lg border-2 border-gray-200 cursor-pointer shrink-0"
                     />
@@ -125,7 +173,7 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                     <input
                       type="text"
                       placeholder={f.type === "text" ? "https://example.com/bg.jpg" : ""}
-                      value={local[f.key]}
+                      value={local[f.key] as string}
                       onChange={(e) => handleChange(f.key, e.target.value)}
                       className="w-full text-sm px-2.5 py-1 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800"
                     />

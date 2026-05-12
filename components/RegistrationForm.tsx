@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Sparkles, User, Phone, Eye } from "lucide-react";
+import { Camera, Sparkles, User, Phone, Mail, Eye } from "lucide-react";
 import WarningBox from "./WarningBox";
 import { addToQueue, subscribeToQueue } from "@/lib/store";
 import { ThemeConfig, DEFAULT_THEME, QueueItem } from "@/lib/utils";
@@ -15,6 +15,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,9 +27,10 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
   }, []);
 
   const isPhoneValid = /^[0-9]{10,11}$/.test(phone);
-  const isFormValid = name.trim().length > 0 && isPhoneValid && agreed;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isFormValid = name.trim().length > 0 && isPhoneValid && isEmailValid && agreed;
 
-  const existingEntries = queue.filter((q) => q.phone === phone && isPhoneValid);
+  const existingEntries = queue.filter((q) => q.email === email && isEmailValid);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +39,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
     setLoading(true);
     setError("");
     try {
-      const item = await addToQueue(name.trim(), phone.trim());
+      const item = await addToQueue(name.trim(), phone.trim(), email.trim().toLowerCase());
       const params = new URLSearchParams({
         id: item.id,
         order: item.order.toString(),
@@ -70,15 +72,15 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
           <Camera className="w-10 h-10" style={{ color: theme.textColor }} />
         </div>
         <h1 className="text-3xl font-bold drop-shadow-lg" style={{ color: theme.textColor }}>
-          Lấy Lượt Chụp Ảnh
+          {theme.titleText}
         </h1>
-        <p className="text-sm" style={{ color: `${theme.textColor}cc` }}>Lễ Trưởng Thành</p>
+        <p className="text-sm" style={{ color: `${theme.textColor}cc` }}>{theme.subtitleText}</p>
       </div>
 
       {existingEntries.length > 0 && (
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 shadow-xl space-y-2">
           <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-            <Eye className="w-4 h-4" /> SĐT này đã đăng ký
+            <Eye className="w-4 h-4" /> Email này đã đăng ký
           </p>
           {existingEntries.map((item) => (
             <button
@@ -89,7 +91,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
             >
               <div>
                 <p className="text-sm font-bold text-gray-800">{item.name}</p>
-                <p className="text-xs text-gray-500">{item.phone}</p>
+                <p className="text-xs text-gray-500">{item.email}</p>
               </div>
               <span
                 className="text-lg font-black px-3 py-1 rounded-xl"
@@ -118,6 +120,22 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+            <Mail className="w-4 h-4" /> Email
+          </label>
+          <input
+            type="email"
+            placeholder="VD: nguyenvana@gmail.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value.trim())}
+            className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-gray-800 placeholder:text-gray-400"
+          />
+          {email.length > 0 && !isEmailValid && (
+            <p className="text-red-500 text-xs mt-1">Email không hợp lệ</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
             <Phone className="w-4 h-4" /> Số điện thoại
           </label>
           <input
@@ -132,7 +150,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
           )}
         </div>
 
-        <WarningBox />
+        <WarningBox turnDuration={theme.turnDuration} />
 
         <label className="flex items-start gap-3 cursor-pointer group">
           <input
