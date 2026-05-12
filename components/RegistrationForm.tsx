@@ -72,7 +72,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
         <h1 className="text-3xl font-bold drop-shadow-lg" style={{ color: theme.textColor }}>
           Lấy Lượt Chụp Ảnh
         </h1>
-        <p className="text-sm" style={{ color: `${theme.textColor}cc` }}>Lễ Trưởng Thành 2025</p>
+        <p className="text-sm" style={{ color: `${theme.textColor}cc` }}>Lễ Trưởng Thành</p>
       </div>
 
       {existingEntries.length > 0 && (
