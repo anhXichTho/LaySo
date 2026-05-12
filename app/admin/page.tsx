@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -12,6 +12,7 @@ import {
   Timer,
   BarChart3,
   Trash2,
+  Monitor,
 } from "lucide-react";
 import LoginForm from "@/components/LoginForm";
 import QueueList from "@/components/QueueList";
@@ -55,9 +56,10 @@ export default function AdminPage() {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  const currentItem = queue.find((q) => q.status === "in-progress");
+  const inProgressItems = queue.filter((q) => q.status === "in-progress");
   const waitingItems = queue.filter((q) => q.status === "waiting");
   const doneItems = queue.filter((q) => q.status === "done");
+  const canStartMore = inProgressItems.length < theme.boothCount && waitingItems.length > 0;
 
   function handleLogin() {
     setLoggedIn(true);
@@ -71,29 +73,27 @@ export default function AdminPage() {
 
   async function handleStart() {
     if (waitingItems.length === 0) return;
-    const first = waitingItems[0];
-    await updateQueueItemStatus(first.id, "in-progress");
+    const slotsAvailable = theme.boothCount - inProgressItems.length;
+    const toStart = waitingItems.slice(0, slotsAvailable);
+    for (const item of toStart) {
+      await updateQueueItemStatus(item.id, "in-progress");
+    }
     if (!startTime) {
       await saveStartTime(Date.now());
     }
+    await saveTurnStartTime(Date.now());
   }
 
-  async function handleComplete() {
-    if (!currentItem) return;
-    await updateQueueItemStatus(currentItem.id, "done");
+  async function handleCompleteItem(item: QueueItem) {
+    await updateQueueItemStatus(item.id, "done");
     if (waitingItems.length > 0) {
       await updateQueueItemStatus(waitingItems[0].id, "in-progress");
       await saveTurnStartTime(Date.now());
     }
   }
 
-  async function handleGoBack() {
-    if (!currentItem) return;
-    await updateQueueItemStatus(currentItem.id, "waiting");
-    if (doneItems.length > 0) {
-      const lastDone = doneItems[doneItems.length - 1];
-      await updateQueueItemStatus(lastDone.id, "in-progress");
-    }
+  async function handleGoBackItem(item: QueueItem) {
+    await updateQueueItemStatus(item.id, "waiting");
   }
 
   async function handleClearAll() {
@@ -161,14 +161,24 @@ export default function AdminPage() {
             className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10"
           >
             <div className="flex items-center gap-2 mb-1">
-              <Clapperboard className="w-5 h-5 text-orange-400" />
+              <Monitor className="w-5 h-5 text-orange-400" />
               <span className="text-sm font-medium" style={{ color: `${theme.textColor}aa` }}>
-                Đang chụp
+                Máy chụp ({inProgressItems.length}/{theme.boothCount})
               </span>
             </div>
-            <p className="text-lg font-bold truncate" style={{ color: theme.textColor }}>
-              {currentItem ? currentItem.name : "Chưa bắt đầu"}
-            </p>
+            <div className="space-y-1">
+              {inProgressItems.length === 0 ? (
+                <p className="text-sm font-bold" style={{ color: theme.textColor }}>
+                  Chưa bắt đầu
+                </p>
+              ) : (
+                inProgressItems.map((item) => (
+                  <p key={item.id} className="text-sm font-bold truncate" style={{ color: theme.textColor }}>
+                    #{item.order} {item.name}
+                  </p>
+                ))
+              )}
+            </div>
           </motion.div>
 
           <motion.div
@@ -189,41 +199,62 @@ export default function AdminPage() {
           </motion.div>
         </div>
 
+        {/* In-progress booths */}
+        {inProgressItems.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {inProgressItems.map((item, i) => (
+              <div
+                key={item.id}
+                className="bg-orange-500/20 backdrop-blur-sm rounded-2xl p-4 border border-orange-400/30"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Clapperboard className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs font-semibold text-orange-300">
+                    Máy {i + 1}
+                  </span>
+                </div>
+                <p className="font-bold truncate mb-3" style={{ color: theme.textColor }}>
+                  #{item.order} {item.name}
+                </p>
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleCompleteItem(item)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs shadow-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" /> Hoàn tất
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleGoBackItem(item)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs shadow-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </motion.button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Controls */}
         <div className="flex flex-wrap gap-2">
-          {!currentItem ? (
+          {canStartMore && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleStart}
-              disabled={waitingItems.length === 0}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg"
               style={{
                 backgroundColor: theme.buttonColor,
                 color: theme.buttonTextColor,
               }}
             >
-              <Play className="w-4 h-4" /> Bắt đầu chụp
+              <Play className="w-4 h-4" />
+              {inProgressItems.length === 0 ? "Bắt đầu chụp" : "Thêm người vào máy"}
             </motion.button>
-          ) : (
-            <>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleComplete}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
-              >
-                <CheckCircle className="w-4 h-4" /> Hoàn tất lượt
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoBack}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
-              >
-                <Undo2 className="w-4 h-4" /> Quay lại
-              </motion.button>
-            </>
           )}
 
           {queue.length > 0 && (
@@ -243,7 +274,7 @@ export default function AdminPage() {
               <Users className="w-5 h-5 text-blue-600" /> Danh sách chờ
             </h2>
             <span className="text-sm text-gray-500">
-              {waitingItems.length} đang chờ / {doneItems.length} đã xong
+              {waitingItems.length} đang chờ / {inProgressItems.length} đang chụp / {doneItems.length} đã xong
             </span>
           </div>
           <div className="p-3 max-h-[60vh] overflow-y-auto">

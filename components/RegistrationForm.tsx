@@ -28,13 +28,16 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
 
   const isPhoneValid = /^[0-9]{10,11}$/.test(phone);
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isFormValid = name.trim().length > 0 && isPhoneValid && isEmailValid && agreed;
-
-  const existingEntries = queue.filter((q) => q.email === email && isEmailValid);
+  const existingEntries = queue.filter((q) => q.email === email.trim().toLowerCase() && isEmailValid);
+  const isFormValid = name.trim().length > 0 && isPhoneValid && isEmailValid && agreed && existingEntries.length === 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isFormValid) return;
+    if (existingEntries.length > 0) {
+      setError("Email này đã được đăng ký. Bấm vào số thứ tự ở trên để xem.");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -150,7 +153,7 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
           )}
         </div>
 
-        <WarningBox turnDuration={theme.turnDuration} />
+        <WarningBox holdDuration={theme.holdDuration} turnDuration={theme.turnDuration} />
 
         <label className="flex items-start gap-3 cursor-pointer group">
           <input

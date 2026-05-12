@@ -155,7 +155,7 @@ export default function ConfirmCard() {
               <span className="text-gray-700 text-sm">
                 Dự kiến:{" "}
                 <strong className="text-teal-600">
-                  {estimateTime(myOrder, currentOrder, turnStartTime, waitingBeforeMe, theme.turnDuration)}
+                  {estimateTime(myOrder, currentOrder, turnStartTime, waitingBeforeMe, theme.turnDuration, theme.boothCount)}
                 </strong>
               </span>
             </div>

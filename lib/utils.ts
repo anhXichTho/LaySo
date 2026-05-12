@@ -19,6 +19,8 @@ export interface ThemeConfig {
   titleText: string;
   subtitleText: string;
   turnDuration: number;
+  holdDuration: number;
+  boothCount: number;
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
@@ -32,6 +34,8 @@ export const DEFAULT_THEME: ThemeConfig = {
   titleText: "Lấy Lượt Chụp Ảnh",
   subtitleText: "Lễ Trưởng Thành",
   turnDuration: 5,
+  holdDuration: 5,
+  boothCount: 1,
 };
 
 export function formatTime(timestamp: number): string {
@@ -44,14 +48,16 @@ export function estimateTime(
   currentOrder: number,
   turnStartTime: number | null,
   waitingBeforeMe: number,
-  turnMinutes: number = 5
+  turnMinutes: number = 5,
+  boothCount: number = 1
 ): string {
   if (!turnStartTime) return "Chưa bắt đầu";
-  if (order <= currentOrder) return "Sắp đến lượt!";
+  if (waitingBeforeMe <= 0) return "Sắp đến lượt!";
   const turnMs = turnMinutes * 60 * 1000;
   const elapsed = Date.now() - turnStartTime;
   const remaining = Math.max(0, turnMs - elapsed);
-  const estimatedMs = Date.now() + remaining + (waitingBeforeMe - 1) * turnMs;
+  const batchesAhead = Math.ceil(waitingBeforeMe / boothCount);
+  const estimatedMs = Date.now() + remaining + (batchesAhead - 1) * turnMs;
   return formatTime(estimatedMs);
 }
 

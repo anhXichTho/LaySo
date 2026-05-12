@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Palette, X, Save, RotateCcw, Image, Type, Timer } from "lucide-react";
+import { Palette, X, Save, RotateCcw, Image, Type, Timer, Monitor } from "lucide-react";
 import { ThemeConfig, DEFAULT_THEME } from "@/lib/utils";
 import { saveThemeConfig } from "@/lib/store";
 
@@ -97,7 +97,7 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                   {local.titleText || "Tiêu đề"}
                 </p>
                 <p className="text-xs" style={{ color: `${local.textColor}cc` }}>
-                  {local.subtitleText || "Phụ đề"} · {local.turnDuration} phút/lượt
+                  {local.subtitleText || "Phụ đề"} · {local.turnDuration}p chụp · giữ {local.holdDuration}p · {local.boothCount} máy
                 </p>
                 <button
                   type="button"
@@ -133,12 +133,12 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                 </div>
               </div>
 
-              {/* Turn duration */}
+              {/* Settings */}
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5 pt-1">
-                <Timer className="w-3.5 h-3.5" /> Thời gian
+                <Timer className="w-3.5 h-3.5" /> Cài đặt
               </p>
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600 shrink-0">Số phút / lượt</label>
+                <label className="text-xs font-medium text-gray-600 shrink-0">Thời gian chụp</label>
                 <input
                   type="number"
                   min={1}
@@ -147,7 +147,33 @@ export default function ThemeConfigurator({ theme, onUpdate }: Props) {
                   onChange={(e) => setLocal((prev) => ({ ...prev, turnDuration: Math.max(1, parseInt(e.target.value) || 1) }))}
                   className="w-20 text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800 text-center"
                 />
+                <span className="text-xs text-gray-500">phút/lượt</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-600 shrink-0">Giữ lượt</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={local.holdDuration}
+                  onChange={(e) => setLocal((prev) => ({ ...prev, holdDuration: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-20 text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800 text-center"
+                />
                 <span className="text-xs text-gray-500">phút</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-600 shrink-0 flex items-center gap-1">
+                  <Monitor className="w-3.5 h-3.5" /> Số máy chụp
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={local.boothCount}
+                  onChange={(e) => setLocal((prev) => ({ ...prev, boothCount: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-20 text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 focus:border-purple-400 outline-none text-gray-800 text-center"
+                />
+                <span className="text-xs text-gray-500">máy</span>
               </div>
 
               {/* Color settings */}
