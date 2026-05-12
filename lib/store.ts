@@ -77,7 +77,12 @@ export function subscribeToTheme(callback: (theme: ThemeConfig) => void) {
 
 export async function saveStartTime(time: number) {
   const docRef = doc(db, CONFIG_COLLECTION, "session");
-  await setDoc(docRef, { startTime: time }, { merge: true });
+  await setDoc(docRef, { startTime: time, turnStartTime: time }, { merge: true });
+}
+
+export async function saveTurnStartTime(time: number) {
+  const docRef = doc(db, CONFIG_COLLECTION, "session");
+  await setDoc(docRef, { turnStartTime: time }, { merge: true });
 }
 
 export async function getStartTime(): Promise<number | null> {
@@ -98,13 +103,14 @@ export async function clearAllQueue() {
   await setDoc(sessionRef, { startTime: null });
 }
 
-export function subscribeToSession(callback: (data: { startTime: number | null }) => void) {
+export function subscribeToSession(callback: (data: { startTime: number | null; turnStartTime: number | null }) => void) {
   const docRef = doc(db, CONFIG_COLLECTION, "session");
   return onSnapshot(docRef, (snap) => {
     if (snap.exists()) {
-      callback({ startTime: snap.data().startTime || null });
+      const d = snap.data();
+      callback({ startTime: d.startTime || null, turnStartTime: d.turnStartTime || null });
     } else {
-      callback({ startTime: null });
+      callback({ startTime: null, turnStartTime: null });
     }
   });
 }

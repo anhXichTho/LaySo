@@ -32,11 +32,18 @@ export function formatTime(timestamp: number): string {
   return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 }
 
-export function estimateTime(order: number, currentIndex: number, startTime: number | null): string {
-  if (!startTime) return "Chưa bắt đầu";
-  const waitSlots = order - currentIndex - 1;
-  if (waitSlots <= 0) return "Sắp đến lượt!";
-  const estimatedMs = startTime + (order - 1) * 10 * 60 * 1000;
+export function estimateTime(
+  order: number,
+  currentOrder: number,
+  turnStartTime: number | null,
+  waitingBeforeMe: number
+): string {
+  if (!turnStartTime) return "Chưa bắt đầu";
+  if (order <= currentOrder) return "Sắp đến lượt!";
+  const TURN_DURATION = 10 * 60 * 1000;
+  const elapsed = Date.now() - turnStartTime;
+  const remaining = Math.max(0, TURN_DURATION - elapsed);
+  const estimatedMs = Date.now() + remaining + (waitingBeforeMe - 1) * TURN_DURATION;
   return formatTime(estimatedMs);
 }
 

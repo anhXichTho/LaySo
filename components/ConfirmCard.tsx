@@ -17,12 +17,16 @@ export default function ConfirmCard() {
 
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [turnStartTime, setTurnStartTime] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [theme, setTheme] = useState<ThemeConfig>(DEFAULT_THEME);
 
   useEffect(() => {
     const unsub1 = subscribeToQueue(setQueue);
-    const unsub2 = subscribeToSession((data) => setStartTime(data.startTime));
+    const unsub2 = subscribeToSession((data) => {
+      setStartTime(data.startTime);
+      setTurnStartTime(data.turnStartTime);
+    });
     const unsub3 = subscribeToTheme(setTheme);
     return () => { unsub1(); unsub2(); unsub3(); };
   }, []);
@@ -34,6 +38,9 @@ export default function ConfirmCard() {
 
   const myItem = queue.find((q) => q.id === id);
   const myStatus = myItem?.status ?? "waiting";
+  const waitingBeforeMe = queue.filter(
+    (q) => q.status === "waiting" && q.order < myOrder
+  ).length + (currentItem ? 1 : 0);
 
   async function handleShare() {
     const url = window.location.href;
@@ -148,7 +155,7 @@ export default function ConfirmCard() {
               <span className="text-gray-700 text-sm">
                 Dự kiến:{" "}
                 <strong className="text-teal-600">
-                  {estimateTime(myOrder, currentOrder, startTime)}
+                  {estimateTime(myOrder, currentOrder, turnStartTime, waitingBeforeMe)}
                 </strong>
               </span>
             </div>

@@ -20,6 +20,7 @@ import {
   subscribeToQueue,
   updateQueueItemStatus,
   saveStartTime,
+  saveTurnStartTime,
   subscribeToSession,
   getThemeConfig,
   clearAllQueue,
@@ -82,6 +83,7 @@ export default function AdminPage() {
     await updateQueueItemStatus(currentItem.id, "done");
     if (waitingItems.length > 0) {
       await updateQueueItemStatus(waitingItems[0].id, "in-progress");
+      await saveTurnStartTime(Date.now());
     }
   }
 

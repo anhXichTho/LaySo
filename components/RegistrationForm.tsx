@@ -4,31 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Sparkles, User, Phone, Eye } from "lucide-react";
 import WarningBox from "./WarningBox";
-import { addToQueue } from "@/lib/store";
-import { ThemeConfig, DEFAULT_THEME } from "@/lib/utils";
-
-interface SavedRegistration {
-  id: string;
-  order: number;
-  name: string;
-  phone: string;
-}
-
-function getSavedRegistrations(): SavedRegistration[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const data = localStorage.getItem("registrations");
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRegistration(reg: SavedRegistration) {
-  const list = getSavedRegistrations();
-  list.push(reg);
-  localStorage.setItem("registrations", JSON.stringify(list));
-}
+import { addToQueue, subscribeToQueue } from "@/lib/store";
+import { ThemeConfig, DEFAULT_THEME, QueueItem } from "@/lib/utils";
 
 interface Props {
   theme?: ThemeConfig;
@@ -41,14 +18,17 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [savedList, setSavedList] = useState<SavedRegistration[]>([]);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
 
   useEffect(() => {
-    setSavedList(getSavedRegistrations());
+    const unsub = subscribeToQueue(setQueue);
+    return () => unsub();
   }, []);
 
   const isPhoneValid = /^[0-9]{10,11}$/.test(phone);
   const isFormValid = name.trim().length > 0 && isPhoneValid && agreed;
+
+  const existingEntries = queue.filter((q) => q.phone === phone && isPhoneValid);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,12 +38,6 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
     setError("");
     try {
       const item = await addToQueue(name.trim(), phone.trim());
-      saveRegistration({
-        id: item.id,
-        order: item.order,
-        name: item.name,
-        phone: phone.trim(),
-      });
       const params = new URLSearchParams({
         id: item.id,
         order: item.order.toString(),
@@ -77,11 +51,11 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
     }
   }
 
-  function viewSaved(reg: SavedRegistration) {
+  function viewExisting(item: QueueItem) {
     const params = new URLSearchParams({
-      id: reg.id,
-      order: reg.order.toString(),
-      name: reg.name,
+      id: item.id,
+      order: item.order.toString(),
+      name: item.name,
     });
     router.push(`/confirm?${params.toString()}`);
   }
@@ -101,27 +75,27 @@ export default function RegistrationForm({ theme = DEFAULT_THEME }: Props) {
         <p className="text-sm" style={{ color: `${theme.textColor}cc` }}>Lễ Trưởng Thành 2025</p>
       </div>
 
-      {savedList.length > 0 && (
+      {existingEntries.length > 0 && (
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 shadow-xl space-y-2">
           <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-            <Eye className="w-4 h-4" /> Số đã đăng ký trước đó
+            <Eye className="w-4 h-4" /> SĐT này đã đăng ký
           </p>
-          {savedList.map((reg, i) => (
+          {existingEntries.map((item) => (
             <button
-              key={i}
+              key={item.id}
               type="button"
-              onClick={() => viewSaved(reg)}
+              onClick={() => viewExisting(item)}
               className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors text-left"
             >
               <div>
-                <p className="text-sm font-bold text-gray-800">{reg.name}</p>
-                <p className="text-xs text-gray-500">{reg.phone}</p>
+                <p className="text-sm font-bold text-gray-800">{item.name}</p>
+                <p className="text-xs text-gray-500">{item.phone}</p>
               </div>
               <span
                 className="text-lg font-black px-3 py-1 rounded-xl"
                 style={{ backgroundColor: `${theme.buttonColor}20`, color: theme.buttonColor }}
               >
-                #{reg.order}
+                #{item.order}
               </span>
             </button>
           ))}
